@@ -28,7 +28,7 @@ jobs:
         run: pyinstaller --clean --noconfirm --windowed --onefile .\pomodoro.py --add-data "alarm.wav;."
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: windows-executable
           path: dist/
