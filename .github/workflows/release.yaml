@@ -31,11 +31,11 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: windows-executable
-          path: dist/
+          path: dist/pomodoro.exe
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: pomodoro.exe
+          artifacts: "dist/pomodoro.exe"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
           name: Release ${{ github.ref_name }}
