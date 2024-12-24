@@ -4,6 +4,13 @@ import time
 import threading
 from playsound import playsound
 import os
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 
 class SettingsDialog(wx.Dialog):
     def __init__(self, parent):
@@ -74,18 +81,8 @@ class PomodoroFrame(wx.Frame):
         self.init_ui()
         self.init_timer()
 
-        self.sound_work = "alarm.wav"  # Sound for work period
-        self.sound_break = "alarm.wav"  # Sound for break period
-
-
-        hwnd = self.GetHandle()
-        try:
-            import ctypes
-            ctypes.windll.user32.SetProcessDPIAware()
-            ctypes.windll.user32.SetWindowDisplayAffinity(hwnd, 0x11)  # WDA_VALID | WDA_MONITOR
-        except Exception as e:
-            print(f"Display affinity setup error (non-critical): {e}")
-    
+        self.sound_work = resource_path("alarm.wav")  # Sound for work period
+        self.sound_break =  resource_path("alarm.wav")  # Sound for break period
     def load_svg(self, svg_string, size=(24, 24)):
         """Convert SVG string to wx.Bitmap"""
         svg_image = wx.svg.SVGimage.CreateFromBytes(svg_string.encode())
