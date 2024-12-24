@@ -1,9 +1,13 @@
 import wx
 import wx.svg
+from wx import adv
 import time
 import threading
 from playsound import playsound
 import os
+
+
+VERSION= "v0.2.0"
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -15,6 +19,7 @@ def resource_path(relative_path):
 class SettingsDialog(wx.Dialog):
     def __init__(self, parent):
         super().__init__(parent, title="Settings", size=(300, 250))
+        self.SetIcon(wx.Icon(resource_path("tomato.ico")))
         self.parent = parent
         
         panel = wx.Panel(self)
@@ -52,6 +57,7 @@ class PomodoroFrame(wx.Frame):
         super().__init__(parent=None, title='Pomodoro', 
                         size=(400, 200),
                         style=wx.DEFAULT_FRAME_STYLE | wx.STAY_ON_TOP)
+        self.SetIcon(wx.Icon(resource_path("tomato.ico")))
         self.svg_icons = {
             'play': '''<?xml version="1.0" encoding="UTF-8"?>
                 <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -83,11 +89,12 @@ class PomodoroFrame(wx.Frame):
 
         self.sound_work = resource_path("alarm.wav")  # Sound for work period
         self.sound_break =  resource_path("alarm.wav")  # Sound for break period
+
     def load_svg(self, svg_string, size=(24, 24)):
         """Convert SVG string to wx.Bitmap"""
         svg_image = wx.svg.SVGimage.CreateFromBytes(svg_string.encode())
         return svg_image.ConvertToScaledBitmap(wx.Size(*size), self)
-    
+
     def init_ui(self):
         panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -141,14 +148,18 @@ class PomodoroFrame(wx.Frame):
             bitmap=self.load_svg(self.svg_icons['settings']),
             size=(32, 32)
         )
-
-
         
+        icon_file = wx.Image(resource_path("tomato.ico"), wx.BITMAP_TYPE_ICO)
+        icon_file.Rescale(24, 24, wx.IMAGE_QUALITY_HIGH)
+        bitmap = wx.Bitmap(icon_file)
+        self.about_button = wx.BitmapButton(panel, bitmap=bitmap, size=(32, 32))    
+
         hbox.Add(self.play_button, flag=wx.LEFT|wx.RIGHT, border=2)  # Smaller border
         hbox.Add(self.next_button, flag=wx.LEFT|wx.RIGHT, border=2)
         hbox.Add(self.reset_button, flag=wx.LEFT|wx.RIGHT, border=2)
         hbox.Add(self.reset_all_button, flag=wx.LEFT|wx.RIGHT, border=2)
         hbox.Add(self.settings_button, flag=wx.LEFT|wx.RIGHT, border=2)
+        hbox.Add(self.about_button, flag=wx.LEFT|wx.RIGHT, border=2)
     
         
         vbox.Add(hbox, flag=wx.ALIGN_CENTER|wx.ALL, border=2)
@@ -159,6 +170,7 @@ class PomodoroFrame(wx.Frame):
         self.reset_button.SetToolTip("Reset Current Period")
         self.settings_button.SetToolTip("Settings")
         self.reset_all_button.SetToolTip("Reset All Cycles")
+        self.about_button.SetToolTip("About")
         
         # Bind events
         self.play_button.Bind(wx.EVT_BUTTON, self.on_play)
@@ -166,12 +178,23 @@ class PomodoroFrame(wx.Frame):
         self.reset_button.Bind(wx.EVT_BUTTON, self.on_reset)
         self.reset_all_button.Bind(wx.EVT_BUTTON, self.on_reset_all)
         self.settings_button.Bind(wx.EVT_BUTTON, self.on_settings)
+        self.about_button.Bind(wx.EVT_BUTTON, self.on_about)
         
         panel.SetSizer(vbox)
     
     def init_timer(self):
         self.timer_thread = None
-        
+    
+    def on_about(self, event):
+        info = adv.AboutDialogInfo()
+        info.SetName("Pomodoro Timer")
+        info.SetVersion(VERSION)
+        info.SetCopyright("Created by Sorin Savu")
+        info.SetWebSite("https://github.com/sorin25/pomodoro")
+        info.SetDescription("A simple Pomodoro timer application")
+    
+        adv.AboutBox(info)
+
     def get_status_text(self):
         if self.is_work:
             return f"Work Period - Cycle {self.current_cycle}/{self.cycles}"
