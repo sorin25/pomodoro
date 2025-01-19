@@ -6,6 +6,9 @@ import threading
 from playsound import playsound
 import os
 
+import json
+import os
+from pathlib import Path
 
 VERSION= "v0.2.0"
 def resource_path(relative_path):
@@ -25,13 +28,13 @@ class SettingsDialog(wx.Dialog):
         panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
         
-        self.work = wx.SpinCtrl(panel, value="25", min=1, max=60)
-        self.short_break = wx.SpinCtrl(panel, value="5", min=1, max=30)
-        self.long_break = wx.SpinCtrl(panel, value="15", min=1, max=60)
-        self.cycles = wx.SpinCtrl(panel, value="4", min=1, max=10)
+        self.work = wx.SpinCtrl(panel, value=str(parent.work_time), min=1, max=60)
+        self.short_break = wx.SpinCtrl(panel, value=str(parent.short_break), min=1, max=30)
+        self.long_break = wx.SpinCtrl(panel, value=str(parent.long_break), min=1, max=60)
+        self.cycles = wx.SpinCtrl(panel, value=str(parent.cycles), min=1, max=10)
 
         self.stay_on_top = wx.CheckBox(panel, label="Stay on Top")
-        self.stay_on_top.SetValue(self.parent.is_stay_on_top)
+        self.stay_on_top.SetValue(parent.is_stay_on_top)
         
         grid = wx.FlexGridSizer(4, 2, 10, 10)
         grid.Add(wx.StaticText(panel, label="Work (minutes):"))
@@ -58,8 +61,17 @@ class SettingsDialog(wx.Dialog):
         panel.SetSizer(vbox)
 
 class PomodoroFrame(wx.Frame):
+    DEFAULT_SETTINGS = {
+        "work_time": 25,
+        "short_break": 5,
+        "long_break": 15,
+        "cycles": 4,
+        "is_stay_on_top": True
+    }
     def __init__(self):
-        self.is_stay_on_top = True
+        self.settings_file = os.path.join(str(Path.home()), ".pomodoro.json")
+        self.load_settings()
+
         style = wx.CAPTION | wx.CLOSE_BOX | wx.MINIMIZE_BOX
         if self.is_stay_on_top:
             style |= wx.STAY_ON_TOP
@@ -100,6 +112,45 @@ class PomodoroFrame(wx.Frame):
         self.sound_work = resource_path("alarm.wav")  # Sound for work period
         self.sound_break =  resource_path("alarm.wav")  # Sound for break period
     
+    def load_settings(self):
+        try:
+            if os.path.exists(self.settings_file):
+                with open(self.settings_file, 'r') as f:
+                    settings = json.load(f)
+                print(f"Loaded settings: {settings}")
+                # Load settings with fallback to defaults if any key is missing
+                self.work_time = settings.get('work_time', self.DEFAULT_SETTINGS['work_time'])
+                self.short_break = settings.get('short_break', self.DEFAULT_SETTINGS['short_break'])
+                self.long_break = settings.get('long_break', self.DEFAULT_SETTINGS['long_break'])
+                self.cycles = settings.get('cycles', self.DEFAULT_SETTINGS['cycles'])
+                self.is_stay_on_top = settings.get('is_stay_on_top', self.DEFAULT_SETTINGS['is_stay_on_top'])
+            else:
+                # Use defaults and save them
+                self.work_time = self.DEFAULT_SETTINGS['work_time']
+                self.short_break = self.DEFAULT_SETTINGS['short_break']
+                self.long_break = self.DEFAULT_SETTINGS['long_break']
+                self.cycles = self.DEFAULT_SETTINGS['cycles']
+                self.is_stay_on_top = self.DEFAULT_SETTINGS['is_stay_on_top']
+                self.save_settings()
+        except Exception as e:
+            print(f"Error loading settings: {e}")
+            # Use defaults if there's any error
+            self.__dict__.update(self.DEFAULT_SETTINGS)
+    
+    def save_settings(self):
+        try:
+            settings = {
+                'work_time': self.work_time,
+                'short_break': self.short_break,
+                'long_break': self.long_break,
+                'cycles': self.cycles,
+                'is_stay_on_top': self.is_stay_on_top
+            }
+            with open(self.settings_file, 'w') as f:
+                json.dump(settings, f, indent=4)
+        except Exception as e:
+            print(f"Error saving settings: {e}")
+    
     def update_frame_style(self):
         style = wx.CAPTION | wx.CLOSE_BOX | wx.MINIMIZE_BOX
         if self.is_stay_on_top:
@@ -114,13 +165,7 @@ class PomodoroFrame(wx.Frame):
     def init_ui(self):
         panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
-        
-        # Settings
-        self.work_time = 25
-        self.short_break = 5
-        self.long_break = 15
-        self.cycles = 4
-        
+               
         # Status variables
         self.current_cycle = 1
         self.is_work = True
@@ -318,6 +363,7 @@ class PomodoroFrame(wx.Frame):
             if old_stay_on_top != self.is_stay_on_top:
                 self.update_frame_style()
             
+            self.save_settings()
             # Reset timer with new settings
             self.current_cycle = 1
             self.is_work = True
