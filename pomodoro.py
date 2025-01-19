@@ -55,8 +55,8 @@ class SettingsDialog(wx.Dialog):
 class PomodoroFrame(wx.Frame):
     def __init__(self):
         super().__init__(parent=None, title='Pomodoro', 
-                        size=(400, 200),
-                        style=wx.DEFAULT_FRAME_STYLE | wx.STAY_ON_TOP)
+                        size=(250, 200),
+                        style=wx.CAPTION | wx.STAY_ON_TOP | wx.CLOSE_BOX | wx.MINIMIZE_BOX)
         self.SetIcon(wx.Icon(resource_path("tomato.ico")))
         self.svg_icons = {
             'play': '''<?xml version="1.0" encoding="UTF-8"?>
