@@ -29,6 +29,9 @@ class SettingsDialog(wx.Dialog):
         self.short_break = wx.SpinCtrl(panel, value="5", min=1, max=30)
         self.long_break = wx.SpinCtrl(panel, value="15", min=1, max=60)
         self.cycles = wx.SpinCtrl(panel, value="4", min=1, max=10)
+
+        self.stay_on_top = wx.CheckBox(panel, label="Stay on Top")
+        self.stay_on_top.SetValue(self.parent.is_stay_on_top)
         
         grid = wx.FlexGridSizer(4, 2, 10, 10)
         grid.Add(wx.StaticText(panel, label="Work (minutes):"))
@@ -42,6 +45,8 @@ class SettingsDialog(wx.Dialog):
         
         vbox.Add(grid, proportion=1, flag=wx.ALL|wx.EXPAND, border=10)
         
+        vbox.Add(self.stay_on_top, flag=wx.ALL|wx.EXPAND, border=10)
+        
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         ok_button = wx.Button(panel, wx.ID_OK, "OK")
         cancel_button = wx.Button(panel, wx.ID_CANCEL, "Cancel")
@@ -54,9 +59,14 @@ class SettingsDialog(wx.Dialog):
 
 class PomodoroFrame(wx.Frame):
     def __init__(self):
+        self.is_stay_on_top = True
+        style = wx.CAPTION | wx.CLOSE_BOX | wx.MINIMIZE_BOX
+        if self.is_stay_on_top:
+            style |= wx.STAY_ON_TOP
+        
         super().__init__(parent=None, title='Pomodoro', 
                         size=(250, 200),
-                        style=wx.CAPTION | wx.STAY_ON_TOP | wx.CLOSE_BOX | wx.MINIMIZE_BOX)
+                        style=style)
         self.SetIcon(wx.Icon(resource_path("tomato.ico")))
         self.svg_icons = {
             'play': '''<?xml version="1.0" encoding="UTF-8"?>
@@ -89,6 +99,12 @@ class PomodoroFrame(wx.Frame):
 
         self.sound_work = resource_path("alarm.wav")  # Sound for work period
         self.sound_break =  resource_path("alarm.wav")  # Sound for break period
+    
+    def update_frame_style(self):
+        style = wx.CAPTION | wx.CLOSE_BOX | wx.MINIMIZE_BOX
+        if self.is_stay_on_top:
+            style |= wx.STAY_ON_TOP
+        self.SetWindowStyle(style)
 
     def load_svg(self, svg_string, size=(24, 24)):
         """Convert SVG string to wx.Bitmap"""
@@ -296,6 +312,11 @@ class PomodoroFrame(wx.Frame):
             self.short_break = dialog.short_break.GetValue()
             self.long_break = dialog.long_break.GetValue()
             self.cycles = dialog.cycles.GetValue()
+            
+            old_stay_on_top = self.is_stay_on_top
+            self.is_stay_on_top = dialog.stay_on_top.GetValue()
+            if old_stay_on_top != self.is_stay_on_top:
+                self.update_frame_style()
             
             # Reset timer with new settings
             self.current_cycle = 1
